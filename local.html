@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<title>InsPause Z</title>
+
+<link rel="stylesheet" href="css/z.css" type="text/css"/>
+
+<script src="js/d3.js"></script>
+<script src="js/z.js"></script>
+<script src="js/file.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/volume.js"></script>
+<script src="js/label.js"></script>
+<script src="js/findsnd.js"></script>
+<script src="js/player.js"></script>
+<script src="js/viz.js"></script>
+<script src="js/toolbar.js"></script>
+
+<script type="text/javascript">
+window.onload = function () {
+    z.run(d3.select("#container"));
+};
+</script>
+
+</head>
+
+<body>
+
+<div id="container">
+  <div id="toolbar">
+    <i id="tool-head" class="tool-item"></i>
+    <i id="tool-play" class="tool-item"></i>
+    <i id="tool-playpause" class="tool-item"></i>
+    <i id="tool-pause" class="tool-item"></i>
+    <i id="tool-zoomin" class="tool-item"></i>
+    <i id="tool-zoomout" class="tool-item"></i>
+
+    <input id="volume" type="range" min="0" max="100" value="100" />
+  </div>
+
+  <div id="audio-file-panel">
+    <input id="file-select" type="file" accept="audio/*" />
+  </div>
+
+  <div style="clear: both;"></div>
+
+  <svg id="viz" width="960" height="500">
+    <g id="focus-layer">
+      <path id="focus-volume" class="volume" d=""></path>
+      <g id="labels-layer"></g>
+      <line id="current-pos" x1="0" y1="0" x2="0" y2="390"></line>
+      <g id="focus-axis" class="axis"></g>
+      <rect id="focus-rect" x="0" y="0" width="0" height="0"></rect>
+    </g>
+
+    <g id="context-layer">
+      <rect id="brush" x="0" y="1" width="0" height="48"></rect>
+      <path id="context-volume" class="volume" d=""></path>
+      <g id="context-axis" class="axis"></g>
+      <rect id="context-rect" x="0" y="0" width="0" height="0"></rect>
+    </g>
+
+    <g id="labels-layer"></g>
+  </svg>
+</div>
+
+</body>
+
+</html>
