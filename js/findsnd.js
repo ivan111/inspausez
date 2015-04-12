@@ -1,20 +1,15 @@
 (function() {
     "use strict";
 
-    window.z.findSound = findSound;
-
-    var SIL_LV = 5,
-        SIL_DUR_S = 0.3,
-        SND_DUR_S = 0.2,
-        BEFORE_DUR_S = 0.2,
-        AFTER_DUR_S = 0.2;
+    z.findSound = findSound;
 
 
-    function findSound(vol, silLv, silDurS, beforeDurS, afterDurS) {
-        silLv = typeof silLv !== "undefined" ? silLv : SIL_LV;
-        silDurS = typeof silDurS !== "undefined" ? silDurS : SIL_DUR_S;
-        beforeDurS = typeof beforeDurS !== "undefined" ? beforeDurS : BEFORE_DUR_S;
-        afterDurS = typeof afterDurS !== "undefined" ? afterDurS : AFTER_DUR_S;
+    function findSound(vol, silLv, silDurS, sndDurS, beforeDurS, afterDurS) {
+        silLv = typeof silLv !== "undefined" ? silLv : z.SIL_LV;
+        silDurS = typeof silDurS !== "undefined" ? silDurS : z.SIL_DUR_S;
+        sndDurS = typeof sndDurS !== "undefined" ? sndDurS : z.SND_DUR_S;
+        beforeDurS = typeof beforeDurS !== "undefined" ? beforeDurS : z.BEFORE_DUR_S;
+        afterDurS = typeof afterDurS !== "undefined" ? afterDurS : z.AFTER_DUR_S;
 
         var durS = vol.length / z.VOL_RATE;
 
@@ -23,13 +18,13 @@
         var maxVal = Math.max.apply(null, vol);
         var thres = silLv * maxVal / 100;
         var silF = silDurS * z.VOL_RATE;
-        var sndF = SND_DUR_S * z.VOL_RATE;
+        var sndF = sndDurS * z.VOL_RATE;
         var silC = 0;
         var sndC = 0;
         var silStart = -1;
         var sndStart = -1;
         var isFirstSnd = true;
-        var labels = [];
+        var labels = z.createLabels();
 
         for (var n = 0; n < vol.length; n++) {
             var v = vol[n];
@@ -47,7 +42,7 @@
                     var endTime = (silStart + silF) / z.VOL_RATE;
                     endTime = Math.max(0, Math.min(endTime, durS));
 
-                    labels.push(new z.Label(startTime, endTime, z.LBL_PAUSE));
+                    labels.push(z.createPauseLabel(startTime, endTime));
 
                     isFirstSnd = true;
                     silC = 0;
@@ -77,7 +72,7 @@
                 endTime = durS;
             }
 
-            labels.push(new z.Label(startTime, endTime, z.LBL_PAUSE));
+            labels.push(z.createPauseLabel(startTime, endTime));
         }
 
         return labels;

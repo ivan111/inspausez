@@ -1,7 +1,7 @@
 (function() {
     "use strict";
 
-    window.z.audio = {
+    z.audio = {
         getContext: getContext,
         load: load
     };

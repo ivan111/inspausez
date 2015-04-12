@@ -1,11 +1,10 @@
 (function() {
     "use strict";
 
-    window.z.toolbar = {
+    z.toolbar = {
         init: init,
         setEnable: setEnable
     };
-
 
     var toolTbl = [
             { id: "#tool-head", isEnable: z.canHead, onClick: z.head },
@@ -13,7 +12,9 @@
             { id: "#tool-playpause", isEnable: z.player.canPlay, onClick: z.player.playPause },
             { id: "#tool-pause", isEnable: z.player.canPause, onClick: z.player.pause },
             { id: "#tool-zoomin", isEnable: z.viz.canZoomIn, onClick: z.viz.zoomIn },
-            { id: "#tool-zoomout", isEnable: z.viz.canZoomOut, onClick: z.viz.zoomOut }
+            { id: "#tool-zoomout", isEnable: z.viz.canZoomOut, onClick: z.viz.zoomOut },
+            { id: "#tool-undo", isEnable: z.canUndo, onClick: z.undo },
+            { id: "#tool-redo", isEnable: z.canRedo, onClick: z.redo }
         ];
 
 
@@ -40,7 +41,7 @@
         for (var i = 0; i < toolTbl.length; i++) {
             var d = toolTbl[i];
 
-            if (d.isEnable && d.isEnable()) {
+            if (z.vol && d.isEnable && d.isEnable()) {
                 d.item.classed("enabled", true);
             } else {
                 d.item.classed("enabled", false);

@@ -1,102 +1,132 @@
 (function() {
     "use strict";
 
-    window.z.Label = Label;
-    window.z.LBL_PAUSE = "p";
-    window.z.LBL_CUT = "x";
+    z.createPauseLabel = createPauseLabel;
+    z.createEraseLabel = createEraseLabel;
 
 
-    var MIN_DUR_S = 0.1;
+    var LBL_PAUSE = "p",
+        LBL_ERASE = "x";
 
 
-    function Label(startS, endS, type) {
-        this.colour = null;
-        this.initPos(startS, endS);
-
-        if (type === z.LBL_CUT) {
-            this.type = z.LBL_CUT;
-        } else {
-            this.type = z.LBL_PAUSE;
-        }
+    function createPauseLabel(startS, endS) {
+        return createLabel(startS, endS, LBL_PAUSE);
     }
 
 
-    Label.prototype.isPause = function () {
-        return this.type === z.LBL_PAUSE;
-    };
+    function createEraseLabel(startS, endS) {
+        return createLabel(startS, endS, LBL_ERASE);
+    }
 
 
-    Label.prototype.isCut = function () {
-        return this.type === z.LBL_CUT;
-    };
+    function createLabel(startS, endS, type) {
+        var colour = null;
 
+        initPos(startS, endS);
 
-    Label.prototype.setPause = function () {
-        this.type = z.LBL_PAUSE;
-    };
-
-
-    Label.prototype.setCut = function () {
-        this.type = z.LBL_CUT;
-    };
-
-
-    Label.prototype.contains = function (posS) {
-        if (this.startS <= posS && posS <= this.endS) {
-            return true;
+        if (type !== LBL_ERASE) {
+            type = LBL_PAUSE;
         }
 
-        return false;
-    };
+
+        function my() {
+        }
 
 
-    Label.prototype.shift = function (valS) {
-        this.startS += valS;
-        this.endS += valS;
-
-        this.colour = null;
-    };
+        my.toString = function () {
+            return [startS.toFixed(6), endS.toFixed(6), type].join("\t");
+        };
 
 
-    Label.prototype.setStartS = function (startS) {
-        this.startS = Math.max(0, Math.min(startS, this.endS - MIN_DUR_S));
-        this.colour = null;
-    };
+        my.clone = function () {
+            return createLabel(startS, endS, type);
+        };
 
 
-    Label.prototype.setEndS = function (endS) {
-        this.endS = Math.max(this.startS + MIN_DUR_S, endS);
-        this.colour = null;
-    };
-
-
-    Label.prototype.getDurS = function () {
-        return this.endS - this.startS;
-    };
-
-
-    Label.prototype.getColour = function () {
-        if (!this.colour) {
-            var wavelength = this.getDurS() * 60 + 380;
-
-            if (wavelength > 780) {
-                this.colour = [255, 0, 0];
-            } else {
-                this.colour = wav2RGB(wavelength);
+        my.startS = function (valS) {
+            if (!arguments.length) {
+                return startS;
             }
+
+            startS = Math.max(0, Math.min(valS, endS - z.MIN_DUR_S));
+            colour = null;
+
+            return my;
+        };
+
+
+        my.endS = function (valS) {
+            if (!arguments.length) {
+                return endS;
+            }
+
+            endS = Math.max(startS + z.MIN_DUR_S, valS);
+            colour = null;
+
+            return my;
+        };
+
+
+        my.durS = function () {
+            return endS - startS;
+        };
+
+
+        my.colour = function () {
+            if (!colour) {
+                var wavelength = my.durS() * 60 + 380;
+
+                if (wavelength > 780) {
+                    colour = [255, 0, 0];
+                } else {
+                    colour = wav2RGB(wavelength);
+                }
+            }
+
+            return colour;
+        };
+
+
+        my.isPause = function () {
+            return type === LBL_PAUSE;
+        };
+
+
+        my.isCut = function () {
+            return type === LBL_ERASE;
+        };
+
+
+        my.setPause = function () {
+            type = LBL_PAUSE;
+        };
+
+
+        my.setCut = function () {
+            type = LBL_ERASE;
+        };
+
+
+        my.contains = function (posS) {
+            if (startS <= posS && posS <= endS) {
+                return true;
+            }
+
+            return false;
+        };
+
+
+        function initPos (aStartS, aEndS) {
+            aEndS = Math.max(0, aEndS);
+            aStartS = Math.max(0, Math.min(aStartS, aEndS));
+
+            startS = aStartS;
+            endS = aEndS;
         }
 
-        return this.colour;
-    };
 
-
-    Label.prototype.initPos = function (startS, endS) {
-        endS = Math.max(0, endS);
-        startS = Math.max(0, Math.min(startS, endS));
-
-        this.startS = startS;
-        this.endS = endS;
-    };
+        return my;
+    }
 
 
     // http://codingmess.blogspot.jp/2009/05/conversion-of-wavelength-in-nanometers.html

@@ -21,6 +21,7 @@ body {
 
 #viz text {
     fill: #EEF;
+    font-size: 12px;
 }
 
 
@@ -36,6 +37,43 @@ body {
 
 #audio-file-panel {
     float: right;
+}
+
+
+.panel {
+    display: inline-block;
+    vertical-align: top;
+    background-color: #DDD;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+
+.panel div {
+    margin: 0.5em;
+}
+
+
+#search-mode-tab {
+    display: none;
+}
+
+
+#search-panel label {
+    display: block;
+    float: left;
+    width: 8em;
+}
+
+
+.panel input[type='range'] {
+    width: 200px;
+}
+
+
+line.sil-lv {
+    stroke: #F00;
+    stroke-width: 1px;
 }
 
 
@@ -65,22 +103,90 @@ body {
 
 
 rect.label {
-    stroke: none;
-    fill-opacity: .300;
+    stroke: #FFF;
+    stroke-width: 1px;
+    fill-opacity: .2;
+}
+
+
+rect.label.active {
+    fill-opacity: .3;
+}
+
+
+rect.search-label {
+    stroke: #FFF;
+    stroke-width: 1px;
+    fill-opacity: .2;
+    pointer-events: none;
+}
+
+
+rect.before-label {
+    stroke: #FFF;
+    stroke-dasharray: 3,3;
+    stroke-width: 1px;
+    fill: #F00;
+    fill-opacity: .2;
+    pointer-events: none;
+}
+
+
+rect.after-label {
+    stroke: #FFF;
+    stroke-dasharray: 3,3;
+    stroke-width: 1px;
+    fill: #00F;
+    fill-opacity: .2;
+    pointer-events: none;
 }
 
 
 #current-pos {
     stroke: #F00;
     stroke-width: 1px;
+    pointer-events: none;
+    visibility: hidden;
 }
 
 
-#active-rect {
-    stroke: #FFF;
-    fill: red;
-    fill-opacity: .300;
+#active-layer {
     visibility: hidden;
+}
+
+
+.handle-layer {
+    visibility: hidden;
+}
+
+
+.handle {
+    fill: #383;
+    fill-opacity: 0;
+    stroke: #FFF;
+    stroke-dasharray: 3,3;
+    stroke-width: 1px;
+}
+
+
+.handle.hover {
+    fill-opacity: .3;
+}
+
+
+.handle-triangle {
+    fill: #6B6;
+    stroke: #FFF;
+    stroke-width: 1px;
+    pointer-events: none;
+}
+
+
+#pause-rect {
+    stroke: #060;
+    stroke-width: 1px;
+    fill: #888;
+    fill-opacity: .2;
 }
 
 
@@ -145,6 +251,7 @@ input[type='range']::-moz-range-thumb {
     transform: translate(3px,3px);
 }
 
+
 #tool-head.enabled {
     width: 36px;
     height: 36px;
@@ -193,27 +300,56 @@ input[type='range']::-moz-range-thumb {
     background-position: -180px 0;
 }
 
-#tool-zoomin.enabled {
+#tool-redo.enabled {
     width: 36px;
     height: 36px;
     background-position: -252px 0;
 }
 
-#tool-zoomin {
+#tool-redo {
     width: 36px;
     height: 36px;
     background-position: -288px 0;
 }
 
-#tool-zoomout.enabled {
+#tool-undo.enabled {
     width: 36px;
     height: 36px;
     background-position: -324px 0;
 }
 
-#tool-zoomout {
+#tool-undo {
     width: 36px;
     height: 36px;
     background-position: -360px 0;
 }
+
+#tool-zoomin.enabled {
+    width: 36px;
+    height: 36px;
+    background-position: -396px 0;
+}
+
+#tool-zoomin {
+    width: 36px;
+    height: 36px;
+    background-position: -432px 0;
+}
+
+#tool-zoomout.enabled {
+    width: 36px;
+    height: 36px;
+    background-position: -468px 0;
+}
+
+#tool-zoomout {
+    width: 36px;
+    height: 36px;
+    background-position: -504px 0;
+}
+
+
+
+
+
 

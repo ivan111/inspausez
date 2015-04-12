@@ -11,11 +11,16 @@
 <script src="js/z.js"></script>
 <script src="js/file.js"></script>
 <script src="js/audio.js"></script>
+<script src="js/wavblob.js"></script>
 <script src="js/volume.js"></script>
+<script src="js/history.js"></script>
 <script src="js/label.js"></script>
+<script src="js/labels.js"></script>
 <script src="js/findsnd.js"></script>
 <script src="js/player.js"></script>
+<script src="js/viewport.js"></script>
 <script src="js/viz.js"></script>
+<script src="js/search.js"></script>
 <script src="js/toolbar.js"></script>
 
 <script type="text/javascript">
@@ -36,12 +41,14 @@ window.onload = function () {
     <i id="tool-pause" class="tool-item"></i>
     <i id="tool-zoomin" class="tool-item"></i>
     <i id="tool-zoomout" class="tool-item"></i>
+    <i id="tool-undo" class="tool-item"></i>
+    <i id="tool-redo" class="tool-item"></i>
 
-    <input id="volume" type="range" min="0" max="100" value="100" />
+    <input id="volume" type="range" min="0" max="100" value="100" autocomplete="off" />
   </div>
 
   <div id="audio-file-panel">
-    <input id="file-select" type="file" accept="audio/*" />
+    <input id="file-select" type="file" accept="audio/*" autocomplete="off" />
   </div>
 
   <div style="clear: both;"></div>
@@ -49,10 +56,53 @@ window.onload = function () {
   <svg id="viz" width="960" height="500">
     <g id="focus-layer">
       <path id="focus-volume" class="volume" d=""></path>
+      <rect id="focus-rect" x="0" y="0" width="0" height="0"></rect>
       <g id="labels-layer"></g>
       <line id="current-pos" x1="0" y1="0" x2="0" y2="390"></line>
+      <g id="insert-handle-layer" class="handle-layer">
+          <image id="insert-icon" x="16" y="16" height="16" width="16" xlink:href="images/insert.png" />
+        <path id="insert-handle" class="handle" d="M 0,65 a 65,65 0 0 0 65,-65 l -65,0 z"></path>
+      </g>
+      <g id="active-label-layer">
+        <rect id="pause-rect" x="0" y="0" width="0" height="390"></rect>
+        <g id="left-handle-layer" class="handle-layer">
+          <polygon id="left-handle-triangle" class="handle-triangle" points="1,140 11,145 1,150"></polygon>
+          <path id="left-handle" class="handle" d="M 0,95 a 50,50 0 1 1 0,100"></path>
+        </g>
+        <g id="right-handle-layer" class="handle-layer">
+          <polygon id="right-handle-triangle" class="handle-triangle" points="-1,240 -11,245 -1,250"></polygon>
+          <path id="right-handle" class="handle" d="M 0,195 a 50,50 0 1 0 0,100"></path>
+        </g>
+        <g id="cut-handle-layer" class="handle-layer">
+          <image id="cut-icon" x="16" y="16" height="16" width="16" xlink:href="images/cut.png" />
+          <path id="cut-handle" class="handle" d="M 0,65 a 65,65 0 0 0 65,-65 l -65,0 z"></path>
+        </g>
+        <g id="play1-handle-layer" class="handle-layer">
+          <image id="play1-icon" x="16" y="16" height="16" width="16" xlink:href="images/playsmall.png" />
+          <path id="play1-handle" class="handle" d="M 0,65 a 65,65 0 0 0 65,-65 l -65,0 z"></path>
+        </g>
+        <g id="play2-handle-layer" class="handle-layer">
+          <image id="play2-icon" x="33" y="16" height="16" width="16" xlink:href="images/playsmall.png" />
+          <path id="play2-handle" class="handle" d="M 65,65 a 65,65 0 0 1 -65,-65 l 65,0 z"></path>
+        </g>
+        <g id="play3-handle-layer" class="handle-layer">
+          <image id="play3-icon" x="33" y="16" height="16" width="16" xlink:href="images/playsmall.png" />
+          <path id="play3-handle" class="handle" d="M 65,65 a 65,65 0 0 1 -65,-65 l 65,0 z"></path>
+        </g>
+        <g id="remove-handle-layer" class="handle-layer">
+          <image id="remove-icon" x="-7" y="358" height="16" width="16" xlink:href="images/remove.png" />
+          <path id="remove-handle" class="handle" d="M 0,390 a 50,50 0 0 1 100,0"></path>
+        </g>
+        <g id="lmerge-handle-layer" class="handle-layer">
+          <image id="lmerge-icon" x="21" y="358" height="16" width="16" xlink:href="images/lmerge.png" />
+          <path id="lmerge-handle" class="handle" d="M 0,390 a 65,65 0 0 0 -65,-65 l 0,65 z"></path>
+        </g>
+        <g id="rmerge-handle-layer" class="handle-layer">
+          <image id="rmerge-icon" x="33" y="358" height="16" width="16" xlink:href="images/rmerge.png" />
+          <path id="rmerge-handle" class="handle" d="M 0,390 a 65,65 0 0 1 65,-65 l 0,65 z"></path>
+        </g>
+      </g>
       <g id="focus-axis" class="axis"></g>
-      <rect id="focus-rect" x="0" y="0" width="0" height="0"></rect>
     </g>
 
     <g id="context-layer">
@@ -64,6 +114,79 @@ window.onload = function () {
 
     <g id="labels-layer"></g>
   </svg>
+
+
+  <div id="normal-mode-tab">
+    <fieldset id="pause-panel" class="panel">
+      <legend>ポーズ時間</legend>
+      <p>範囲（秒）×<span id="factor-text">1.00</span>＋<span id="add-text">0.2</span>秒</p>
+      <div>
+        <label>×</label>
+        <input id="factor" type="range" min="0" max="200" value="100" autocomplete="off" />
+      </div>
+      <div>
+        <label>＋</label>
+        <input id="add" type="range" min="0" max="200" value="20" autocomplete="off" />
+      </div>
+    </fieldset>
+
+    <fieldset id="pause-info-panel" class="panel">
+      <legend>ポーズ情報</legend>
+      <div>
+        <label>インポート</label>
+        <input id="info-file-select" type="file" autocomplete="off" />
+      </div>
+      <div>
+        <a id="download-info-link" href="#" download="pause.txt">エクスポート</a>
+      </div>
+    </fieldset>
+
+    <fieldset id="pause-audio-panel" class="panel">
+      <legend>ポーズ音声</legend>
+      <a id="download-audio-link" href="#" download="download.wav">download.wav</a>
+    </fieldset>
+
+    <fieldset id="search-mode-panel" class="panel">
+      <legend>ポーズ自動検索</legend>
+      <input id="search-mode-button" type="button" value="検索モードへ" />
+    </fieldset>
+  </div>
+
+
+  <div id="search-mode-tab">
+    <fieldset id="search-panel" class="panel">
+      <legend>ポーズ自動検索</legend>
+      <div>
+        <label>無音レベル</label>
+        <input id="sil-lv" type="range" min="1" max="20" value="5" autocomplete="off" />
+        <span id="sil-lv-text">5</span>％
+      </div>
+      <div>
+        <label>無音認識時間</label>
+        <input id="sil-dur" type="range" min="10" max="100" value="30" autocomplete="off" />
+        <span id="sil-dur-text">0.30</span>秒
+      </div>
+      <div>
+        <label>音声認識時間</label>
+        <input id="snd-dur" type="range" min="10" max="100" value="20" autocomplete="off" />
+        <span id="snd-dur-text">0.20</span>秒
+      </div>
+      <div>
+        <label>前余裕</label>
+        <input id="before-dur" type="range" min="0" max="100" value="20" autocomplete="off" />
+        <span id="before-dur-text">0.20</span>秒
+      </div>
+      <div>
+        <label>後余裕</label>
+        <input id="after-dur" type="range" min="0" max="100" value="20" autocomplete="off" />
+        <span id="after-dur-text">0.20</span>秒
+      </div>
+      <div style="text-align: right; margin-top: 1em;">
+        <input type="button" value="OK" style="margin-right: 1em;" onclick="z.okSearch();" />
+        <input type="button" value="Cancel" onclick="z.cancelSearch();" />
+      </div>
+    </fieldset>
+  </div>
 </div>
 
 </body>

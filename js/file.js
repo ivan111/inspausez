@@ -1,12 +1,13 @@
 (function() {
     "use strict";
 
-    window.z.file = {
+    z.file = {
         init: init
     };
 
 
-    var fileSelect, fileDrag;
+    var fileSelect, fileDrag,
+        reTxt = /.*\.txt$/i;
 
 
     function init() {
@@ -30,8 +31,31 @@
 
         var files = this.files || d3.event.dataTransfer.files;
 
-        window.console.log(URL.createObjectURL(files[0]));
-        z.audio.load(z.context, URL.createObjectURL(files[0]), z.onLoadAudio);
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+
+
+            if (reTxt.exec(file.name)) {
+                if (!window.FileReader) {
+                    continue;
+                }
+
+                var reader = new window.FileReader();
+                reader.readAsText(file);
+
+                reader.onload = function (e) {
+                    var contents = e.target.result;
+                    var labels = z.createLabels();
+                    labels.loadFromStr(contents, z.durS);
+
+                    if (labels.length > 0) {
+                        z.setLabels(labels);
+                    }
+                };
+            } else {
+                z.audio.load(z.context, URL.createObjectURL(file), z.onLoadAudio);
+            }
+        }
     }
 
 

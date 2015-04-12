@@ -1,9 +1,9 @@
 (function() {
     "use strict";
 
-    window.z.VOL_RATE = 768;
-    window.z.calcVolume = calcVolume;
-    window.z.getSubVolume = getSubVolume;
+    z.VOL_RATE = 768;
+    z.calcVolume = calcVolume;
+    z.getSubVolume = getSubVolume;
 
 
     function calcVolume(buffer) {
@@ -29,19 +29,26 @@
     }
 
 
-    function getSubVolume(startS, endS, scale) {
+    function getSubVolume(startS, scale, num) {
         var startF = Math.floor(startS * z.VOL_RATE);
-        var endF = Math.floor(endS * z.VOL_RATE);
+        startF &= ~(scale - 1);
 
         var ret;
 
         if (scale === 1) {
-            ret = z.vol.slice(startF, endF);
+            ret = z.vol.slice(startF, startF + num);
         } else {
             ret = [];
+            var f = startF;
 
-            for (var f = startF; f < endF; f += scale) {
-                ret.push(z.vol[f]);
+            for (var i = 0; i < num; i++) {
+                if (f < z.vol.length) {
+                    ret.push(z.vol[f]);
+                } else {
+                    ret.push(0);
+                }
+
+                f += scale;
             }
         }
 

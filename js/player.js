@@ -1,10 +1,12 @@
 (function() {
     "use strict";
 
-    window.z.player = {
+    z.player = {
         canPlay: canPlay,
         play: play,
         playPause: playPause,
+        playLabel: playLabel,
+        playIfCut: playIfCut,
         canPause: canPause,
         pause: pause,
         changeVolume: changeVolume,
@@ -14,27 +16,43 @@
 
     var TYPE_PLAY = 1,
         TYPE_PAUSE = 2,
-        tbl = [],
-        tblPos,
-        timerId;
+        TYPE_SET_CUR_S = 3,
+        IFCUT_DUR_S = 0.8,
+        IFCUT_PAUSE_S = 0.5,
+        playTbl = [],
+        playTblPos,
+        timerId,
+        loopPlay = false,
+        fromPause = false;
 
 
-    function setLabels() {
-        tbl = [];
-        tblPos = 0;
-
+    function createPlayPauseTable() {
+        var tbl = [];
         var pos = 0;
+        var labels;
 
-        for (var i = 0; i < z.labels.length; i++) {
-            var label = z.labels[i];
+        if (z.isSearchMode) {
+            labels = z.labelsSearch;
+        } else {
+            labels = z.labels;
+        }
+
+        for (var i = 0; i < labels.length; i++) {
+            var label = labels[i];
 
             if (label.isPause()) {
-                tbl.push({ type: TYPE_PLAY, offset: pos, dur: label.endS - pos });
-                pos = label.endS;
+                tbl.push({ type: TYPE_PLAY, startS: pos, endS: label.endS() });
+                pos = label.endS();
 
-                tbl.push({ type: TYPE_PAUSE, offset: pos, dur: label.getDurS() });
+                tbl.push({ type: TYPE_PAUSE, durS: z.calcPauseS(label.durS()) });
             }
         }
+
+        if (pos < z.durS) {
+            tbl.push({ type: TYPE_PLAY, durS: z.durS - pos });
+        }
+
+        return tbl;
     }
 
 
@@ -48,13 +66,20 @@
     }
 
 
-    function play() {
+    function play(tbl, tblPos) {
         if (!canPlay()) {
             return;
         }
 
-        tbl = [{ type: TYPE_PLAY, offset: 0, dur: z.durS }];
-        tblPos = 0;
+        if (!arguments.length) {
+            playTbl = [{ type: TYPE_PLAY, startS: 0, endS: z.durS }];
+            playTblPos = 0;
+
+            loopPlay = true;
+        } else {
+            playTbl = tbl;
+            playTblPos = tblPos;
+        }
 
         subPlay(true);
     }
@@ -65,55 +90,94 @@
             return;
         }
 
-        setLabels();
+        var tbl = createPlayPauseTable();
+        var tblPos = searchCurTblPos(tbl);
 
-        searchCurTblPos();
+        loopPlay = true;
 
-        subPlay(true);
+        play(tbl, tblPos);
     }
 
 
-    function searchCurTblPos() {
+    function playLabel(label) {
+        if (!canPlay()) {
+            return;
+        }
+
+        var tbl = [{ type: TYPE_PLAY, startS: label.startS(), endS: label.endS() }];
+        z.curS = label.startS();
+
+        loopPlay = false;
+
+        play(tbl, 0);
+
+        z.toolbar.setEnable();
+    }
+
+
+    function playIfCut() {
+        if (!canPlay()) {
+            return;
+        }
+
+        var tbl = [];
+        tbl.push({ type: TYPE_PLAY, startS: Math.max(0, z.curS - IFCUT_DUR_S), endS: z.curS });
+        tbl.push({ type: TYPE_PAUSE, durS: IFCUT_PAUSE_S });
+        tbl.push({ type: TYPE_PLAY, startS: z.curS, endS: Math.min(z.curS + IFCUT_DUR_S, z.durS) });
+        tbl.push({ type: TYPE_SET_CUR_S, curS: z.curS });
+
+        z.curS = tbl[0].startS;
+
+        loopPlay = false;
+
+        play(tbl, 0);
+
+        z.toolbar.setEnable();
+    }
+
+
+    function searchCurTblPos(tbl) {
         for (var i = 0; i < tbl.length; i++) {
             var d = tbl[i];
 
-            if (d.type === TYPE_PLAY && d.offset <= z.curS && z.curS < d.offset + d.dur) {
-                tblPos = i;
-                return;
+            if (d.type === TYPE_PLAY && d.startS <= z.curS && z.curS < d.endS) {
+                return i;
             }
         }
+
+        return 0;
     }
 
 
     function subPlay(isFirst) {
-        if (tblPos >= tbl.length) {
-            tblPos = 0;
-            z.curS = 0;
-        }
-
         z.isPlaying = true;
 
-        var d = tbl[tblPos];
-
-        var offset = d.offset;
-        var dur = d.dur;
-
-        if (isFirst && d.type === TYPE_PLAY && z.curS !== d.offset) {
-            offset = z.curS;
-            dur -= z.curS - d.offset;
-        }
-
-        z.offsetTime = offset;
+        var d = playTbl[playTblPos];
 
         if (d.type === TYPE_PLAY) {
-            playAudio(offset, dur);
+            var startS = d.startS;
+            var durS = d.endS - d.startS;
+
+            if (isFirst && d.type === TYPE_PLAY && z.curS !== d.startS) {
+                startS = z.curS;
+                durS -= z.curS - d.startS;
+            }
+
+            z.offsetTime = startS;
+
+            playAudio(startS, durS);
+        } else if (d.type === TYPE_PAUSE) {
+            playSilence(d.durS);
         } else {
-            playSilence(dur);
+            z.isPlaying = false;
+            z.curS = d.curS;
+            z.player.onChange();
+            z.toolbar.setEnable();
         }
     }
 
 
-    function playAudio(offset, dur) {
+    function playAudio(startS, durS) {
         z.source = z.context.createBufferSource();
         z.source.buffer = z.buffer;
         z.source.onended = onEnded;
@@ -124,7 +188,7 @@
         z.source.connect(z.gainNode);
         z.gainNode.connect(z.context.destination);
 
-        z.source.start(0, offset, dur);
+        z.source.start(0, startS, durS);
 
         z.startTime = z.context.currentTime;
         z.isAudioPlaying = true;
@@ -142,36 +206,64 @@
     }
 
 
-    function playSilence(dur) {
-        setTimeout(onEnded, Math.floor(dur * 1000));
+    function playSilence(durS) {
+        setTimeout(onEnded, Math.floor(durS * 1000));
     }
 
 
     function pause() {
         z.isPlaying = false;
+        fromPause = true;
 
         if (z.isAudioPlaying) {
-            z.isAudioPlaying = false;
-            clearInterval(timerId);
             z.source.stop();
             z.curS = z.offsetTime + z.context.currentTime - z.startTime;
+            z.player.onChange();
         }
+
+        z.toolbar.setEnable();
     }
 
 
     function onEnded() {
-        tblPos++;
-
-        z.gainNode = null;
-        z.player.onChange();
-
         if (z.isAudioPlaying) {
             z.isAudioPlaying = false;
             clearInterval(timerId);
         }
 
-        if (z.isPlaying) {
+        z.gainNode = null;
+
+        if (fromPause) {
+            fromPause = false;
+        } else {
+            var d = playTbl[playTblPos];
+
+            if (d && d.type === TYPE_PLAY) {
+                z.curS = d.endS;
+                z.player.onChange();
+            }
+        }
+
+        if (!z.isPlaying) {
+            z.toolbar.setEnable();
+            return;
+        }
+
+        playTblPos++;
+
+        if (playTblPos < playTbl.length) {
             subPlay();
+            return;
+        }
+
+        if (loopPlay) {
+            playTblPos = 0;
+            z.curS = 0;
+
+            subPlay();
+        } else {
+            z.isPlaying = false;
+            z.toolbar.setEnable();
         }
     }
 })();
