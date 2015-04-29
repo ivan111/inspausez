@@ -60,7 +60,7 @@
         z.context = z.audio.getContext();
 
         if (!z.context) {
-            window.alert("サポートされていないブラウザです。Chrome か Firefox で試してみてください。");
+            window.alert("サポートされていないブラウザです。PC版のChrome か Firefox で試してみてください。");
             return;
         }
 

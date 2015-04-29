@@ -49,7 +49,7 @@
         }
 
         if (pos < z.durS) {
-            tbl.push({ type: TYPE_PLAY, durS: z.durS - pos });
+            tbl.push({ type: TYPE_PLAY, startS: pos, endS: z.durS, durS: z.durS - pos });
         }
 
         return tbl;
